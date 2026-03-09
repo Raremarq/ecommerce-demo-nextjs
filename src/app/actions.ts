@@ -28,7 +28,9 @@ export async function getProducts(category?: string) {
     return db
       .select()
       .from(products)
-      .where(and(eq(products.status, "ACTIVE"), eq(products.category, category)))
+      .where(
+        and(eq(products.status, "ACTIVE"), eq(products.category, category)),
+      )
       .all();
   }
   return db.select().from(products).where(eq(products.status, "ACTIVE")).all();
@@ -47,10 +49,7 @@ export async function getProductBySlug(slug: string) {
 }
 
 export async function getProductById(id: number) {
-  const [product] = await db
-    .select()
-    .from(products)
-    .where(eq(products.id, id));
+  const [product] = await db.select().from(products).where(eq(products.id, id));
   return product ?? null;
 }
 
@@ -100,7 +99,7 @@ export async function updateProduct(
     stock: number;
     featured: boolean;
     status: "ACTIVE" | "DRAFT" | "ARCHIVED";
-  }>
+  }>,
 ) {
   db.update(products).set(data).where(eq(products.id, id)).run();
   revalidatePath("/admin");
@@ -140,13 +139,13 @@ export async function getCartCount(userId: number) {
 export async function addToCart(
   userId: number,
   productId: number,
-  quantity: number = 1
+  quantity: number = 1,
 ) {
   const [existing] = await db
     .select()
     .from(cartItems)
     .where(
-      and(eq(cartItems.userId, userId), eq(cartItems.productId, productId))
+      and(eq(cartItems.userId, userId), eq(cartItems.productId, productId)),
     );
 
   if (existing) {
@@ -191,14 +190,14 @@ export async function createOrder(
     state: string;
     zip: string;
     country: string;
-  }
+  },
 ) {
   const items = await getCartItems(userId);
   if (items.length === 0) throw new Error("Cart is empty");
 
   const subTotalCents = items.reduce(
     (sum, item) => sum + item.product.priceCents * item.quantity,
-    0
+    0,
   );
   const shippingCents = 599;
   const taxCents = Math.round(subTotalCents * 0.08);
@@ -257,4 +256,68 @@ export async function getOrdersByUserId(userId: number) {
 export async function getOrderById(id: number) {
   const [order] = await db.select().from(orders).where(eq(orders.id, id));
   return order ?? null;
+}
+
+export async function createAuction(input: {
+  productId: number;
+  title: string;
+  description: string;
+  priceCents: number;
+  imageUrl: string;
+}) {
+  const url = new URL(
+    "/api/alpha/merchant/auctions",
+    process.env.AUCTION_NOW_API_URL,
+  );
+
+  console.log("url", url.toString());
+  const apiKey = process.env.AUCTION_NOW_API_KEY;
+
+  const startTime = Date.now();
+  const endTime = startTime + 24 * 60 * 60 * 1000; // 24 hours
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      data: {
+        externalProductId: String(input.productId),
+        title: input.title,
+        description: input.description,
+        startTime,
+        endTime,
+        startingPrice: input.priceCents / 100,
+        productType: "PHYSICAL",
+        binAble: false,
+        binAmount: 0,
+        urls: [input.imageUrl],
+        shippingCostUS: 0,
+        shippingCostInternational: 0,
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => null);
+    console.error("Auction creation failed:", error);
+    throw new Error(`Failed to create auction: ${response.statusText}`);
+  }
+
+  const responseJson = await response.json();
+
+  console.log(JSON.stringify(responseJson, null, 2));
+
+  const auctionUrl = responseJson?.data?.productUrl;
+  if (auctionUrl) {
+    db.update(products)
+      .set({ auctionUrl })
+      .where(eq(products.id, input.productId))
+      .run();
+    revalidatePath(`/products`);
+  }
+
+  return responseJson;
 }

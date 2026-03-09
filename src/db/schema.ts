@@ -24,6 +24,7 @@ export const products = sqliteTable("products", {
 	status: text("status", { enum: ["ACTIVE", "DRAFT", "ARCHIVED"] })
 		.notNull()
 		.default("ACTIVE"),
+	auctionUrl: text("auction_url"),
 });
 
 export const cartItems = sqliteTable("cart_items", {

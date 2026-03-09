@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, ShoppingCart, Minus, Plus } from "lucide-react";
+import { ArrowLeft, ShoppingCart, Minus, Plus, Gavel, ExternalLink } from "lucide-react";
 import Link from "next/link";
-import { getProductBySlug, addToCart } from "@/app/actions";
+import { getProductBySlug, addToCart, createAuction } from "@/app/actions";
 import { Button } from "@/lib/components/ui/button";
 import { Badge } from "@/lib/components/ui/badge";
 import { formatCurrency } from "@/lib/utils/format-currency";
@@ -24,6 +24,8 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [adding, setAdding] = useState(false);
+  const [creatingAuction, setCreatingAuction] = useState(false);
+  const isAdmin = currentUser?.role === "admin";
 
   useEffect(() => {
     getProductBySlug(slug)
@@ -125,6 +127,19 @@ export default function ProductDetailPage() {
             </span>
           </div>
 
+          {product.auctionUrl && (
+            <a
+              href={product.auctionUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-primary-600 hover:text-primary-700 mb-4"
+            >
+              <Gavel className="h-4 w-4" />
+              View Auction
+              <ExternalLink className="h-3.5 w-3.5" />
+            </a>
+          )}
+
           {!outOfStock && (
             <div className="flex items-center gap-4 mb-6">
               <div className="flex items-center border border-neutral-200 rounded-lg">
@@ -147,16 +162,49 @@ export default function ProductDetailPage() {
             </div>
           )}
 
-          <Button
-            size="lg"
-            className="w-full sm:w-auto"
-            disabled={outOfStock}
-            loading={adding}
-            onClick={handleAddToCart}
-          >
-            <ShoppingCart className="h-5 w-5" />
-            {outOfStock ? "Out of Stock" : "Add to Cart"}
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button
+              size="lg"
+              className="w-full sm:w-auto"
+              disabled={outOfStock}
+              loading={adding}
+              onClick={handleAddToCart}
+            >
+              <ShoppingCart className="h-5 w-5" />
+              {outOfStock ? "Out of Stock" : "Add to Cart"}
+            </Button>
+
+            {isAdmin && (
+              <Button
+                size="lg"
+                variant="outline"
+                className="w-full sm:w-auto"
+                loading={creatingAuction}
+                onClick={async () => {
+                  setCreatingAuction(true);
+                  try {
+                    await createAuction({
+                      productId: product.id,
+                      title: product.title,
+                      description: product.description,
+                      priceCents: product.priceCents,
+                      imageUrl: product.imageUrl,
+                    });
+                    const updated = await getProductBySlug(slug);
+                    if (updated) setProduct(updated);
+                    toast.success("Auction created");
+                  } catch {
+                    toast.error("Failed to create auction");
+                  } finally {
+                    setCreatingAuction(false);
+                  }
+                }}
+              >
+                <Gavel className="h-5 w-5" />
+                Create Auction
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </div>
