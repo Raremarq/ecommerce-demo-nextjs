@@ -219,7 +219,7 @@ export async function createOrder(
       .run();
   }
 
-  const result = db
+  const result = await db
     .insert(orders)
     .values({
       userId,
