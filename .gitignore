@@ -7,3 +7,5 @@ data/
 drizzle/
 .zed/
 .env
+.claude/
+tsconfig.tsbuildinfo
