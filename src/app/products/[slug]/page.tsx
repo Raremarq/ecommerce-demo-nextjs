@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, ShoppingCart, Minus, Plus, Gavel, ExternalLink } from "lucide-react";
 import Link from "next/link";
-import { getProductBySlug, addToCart, createAuction } from "@/app/actions";
+import { getProductBySlug, addToCart } from "@/app/actions";
 import { Button } from "@/lib/components/ui/button";
 import { Badge } from "@/lib/components/ui/badge";
 import { formatCurrency } from "@/lib/utils/format-currency";
@@ -24,8 +24,6 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [adding, setAdding] = useState(false);
-  const [creatingAuction, setCreatingAuction] = useState(false);
-  const isAdmin = currentUser?.role === "admin";
 
   useEffect(() => {
     getProductBySlug(slug)
@@ -174,36 +172,6 @@ export default function ProductDetailPage() {
               {outOfStock ? "Out of Stock" : "Add to Cart"}
             </Button>
 
-            {isAdmin && (
-              <Button
-                size="lg"
-                variant="outline"
-                className="w-full sm:w-auto"
-                loading={creatingAuction}
-                onClick={async () => {
-                  setCreatingAuction(true);
-                  try {
-                    await createAuction({
-                      productId: product.id,
-                      title: product.title,
-                      description: product.description,
-                      priceCents: product.priceCents,
-                      imageUrl: product.imageUrl,
-                    });
-                    const updated = await getProductBySlug(slug);
-                    if (updated) setProduct(updated);
-                    toast.success("Auction created");
-                  } catch {
-                    toast.error("Failed to create auction");
-                  } finally {
-                    setCreatingAuction(false);
-                  }
-                }}
-              >
-                <Gavel className="h-5 w-5" />
-                Create Auction
-              </Button>
-            )}
           </div>
         </div>
       </div>

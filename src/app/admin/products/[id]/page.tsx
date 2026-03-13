@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/stores/auth";
 import { useToastStore } from "@/lib/stores/toast";
-import { getProductById, updateProduct } from "@/app/actions";
+import { getProductById, updateProduct, createAuction } from "@/app/actions";
 import { Button } from "@/lib/components/ui/button";
-import { Shield } from "lucide-react";
+import { Shield, Gavel } from "lucide-react";
 import { EmptyState } from "@/lib/components/ui/empty-state";
 
 export default function EditProductPage() {
@@ -16,6 +16,8 @@ export default function EditProductPage() {
   const toast = useToastStore();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [creatingAuction, setCreatingAuction] = useState(false);
+  const [auctionUrl, setAuctionUrl] = useState<string | null>(null);
   const [form, setForm] = useState({
     title: "",
     slug: "",
@@ -47,6 +49,7 @@ export default function EditProductPage() {
           status: product.status,
         });
       }
+      setAuctionUrl(product?.auctionUrl ?? null);
       setLoading(false);
     });
   }, [id]);
@@ -273,6 +276,35 @@ export default function EditProductPage() {
           >
             Cancel
           </Button>
+          {!auctionUrl && (
+            <Button
+              type="button"
+              variant="outline"
+              loading={creatingAuction}
+              onClick={async () => {
+                setCreatingAuction(true);
+                try {
+                  await createAuction({
+                    productId: Number(id),
+                    title: form.title,
+                    description: form.description,
+                    priceCents: Math.round(Number(form.priceDollars) * 100),
+                    imageUrl: form.imageUrl,
+                  });
+                  const updated = await getProductById(Number(id));
+                  if (updated) setAuctionUrl(updated.auctionUrl);
+                  toast.success("Auction created");
+                } catch {
+                  toast.error("Failed to create auction");
+                } finally {
+                  setCreatingAuction(false);
+                }
+              }}
+            >
+              <Gavel className="h-4 w-4" />
+              Create Auction
+            </Button>
+          )}
         </div>
       </form>
     </div>
