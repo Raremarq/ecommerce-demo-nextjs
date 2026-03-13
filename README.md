@@ -1,6 +1,6 @@
 # Auction Now API E-Commerce Demo
 
-A demo storefront built with Next.js 16, React 19, and TypeScript. Browse products, manage a shopping cart, and complete checkout — all backed by a local SQLite database.
+This demo storefront shows how the Auction Now API can be integrated with an e-commerce platform. It's built with Next.js 16, React 19, and TypeScript, and backed by a local SQLite database.
 
 ## Tech Stack
 
@@ -11,20 +11,19 @@ A demo storefront built with Next.js 16, React 19, and TypeScript. Browse produc
 - **Drizzle ORM** with SQLite (better-sqlite3)
 - **Zustand** for client-side state management
 
-## Features
-
-- Product catalog with category filtering (Electronics, Clothing, Home & Kitchen, Accessories)
-- Product detail pages with pricing and stock info
-- Shopping cart with add/remove/update quantities
-- Cart drawer sidebar for quick access
-- Checkout flow with shipping address collection
-- Order confirmation and order history
-- User account pages
-- Admin dashboard for product management (create/edit)
-- Toast notifications
-- Responsive, mobile-first design
-
 ## Getting Started
+
+### Get Your Auction Now API Key
+
+To run the demo yourself, you'll need an Auction Now API key. Sign up for a free account at [auctionnow.io](https://auctionnow.io). To get your api key, click on your avatar in the top right corner and select "Manage account" -> "API keys" -> "Add new key".
+
+Alternatively, you can email jacob@auctionnow.io to request access.
+
+Once you have your API key, create a `.env` file in the root of the project (you can copy the `.env.example` file to get started) and add your key:
+
+```
+AUCTION_NOW_API_KEY=<your api key>
+```
 
 ### Prerequisites
 
@@ -35,7 +34,7 @@ A demo storefront built with Next.js 16, React 19, and TypeScript. Browse produc
 
 ```bash
 # Install dependencies
-pnpm install
+pnpm install (or npm install or yarn install)
 
 # Push the database schema and seed with sample data
 pnpm db:push
